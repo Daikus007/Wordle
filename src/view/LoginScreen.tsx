@@ -1,7 +1,8 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Dimensions, Button } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Dimensions, Button, Alert } from 'react-native';
 import { GameContext } from '../context/GameContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Camera } from 'expo-camera'
 
 
 export default function LoginScreen({ navigation }) {
@@ -9,12 +10,22 @@ export default function LoginScreen({ navigation }) {
     const { SaveGame, getGame } = useContext(GameContext);
     const [jugador, setJugador] = useState('');
 
-    const InicioJugador = async () => { 
-        try {
-            await AsyncStorage.setItem("jugador", jugador)
-            navigation.navigate("Game")
-        } catch (error) {
-            console.log(error)
+
+    const InicioJugador = async () => {
+        if (jugador.trim() === '') {
+            alert('Por favor, ingresa un nombre antes de iniciar el juego.');
+        } else {
+            try {
+                const JugadorGuardado = await AsyncStorage.getItem('jugador');
+                if (JugadorGuardado !== jugador) {
+                    // Si es un nuevo jugador, resetear el puntaje a 0
+                    await AsyncStorage.setItem('puntaje', '0');
+                }
+                await AsyncStorage.setItem("jugador", jugador);
+                navigation.navigate("Game");
+            } catch (error) {
+                console.log(error);
+            }
         }
     }
     return (
@@ -31,6 +42,9 @@ export default function LoginScreen({ navigation }) {
                     title="Iniciar Juego"
                     onPress={InicioJugador}
                 />
+                <Button
+                    title="Escanear"
+                    onPress={() => navigation.navigate("Scan")} />
             </>
         </View>
     );
@@ -42,6 +56,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        borderRadius: 30
     },
     titulo: {
         fontSize: 80,

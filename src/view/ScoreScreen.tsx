@@ -1,11 +1,9 @@
-import { View, Text, Button } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 export default function ScoreScreen({ navigation }) {
-  
+
   const [Jugador, setJugador] = useState('');
   const [Puntaje, setPuntaje] = useState(0);
 
@@ -36,11 +34,10 @@ export default function ScoreScreen({ navigation }) {
       <Text>Puntaje: {Puntaje}</Text>
       <Button
         title="Volver a jugar"
-        onPress={() => navigation.navigate("Game")}/>
+        onPress={() => navigation.navigate("Game")} />
     </View>
-  )
+  );
 }
-
 
 const styles = StyleSheet.create({
   container: {
