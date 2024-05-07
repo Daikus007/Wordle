@@ -2,6 +2,8 @@ import React, { useContext, useEffect } from "react"
 import {StyleSheet,View,SafeAreaView,Text,TouchableOpacity,Button,} from "react-native"
 import { GameContext } from "../context/GameContext"
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, doc, updateDoc, query, collection, where, getDocs } from "firebase/firestore";
+import { app } from "../firebaseconfig";
 
 
 const Block = ({ index, guess, word, guessed, }: { index: number, guess: string, word: string, guessed: boolean, }) => {
@@ -90,7 +92,8 @@ const defaultGuess: IGuess = {
     5: "",
 }
 
-export default function GameScreen({navigation}: any ) {
+export default function GameScreen({ navigation }: any) {
+    const db = getFirestore(app);
     const [activeWord, setActiveWord] = React.useState(words[0])
     const [guessIndex, setGuessIndex] = React.useState(0)
     const [guesses, setGuesses] = React.useState<IGuess>(defaultGuess);
@@ -107,8 +110,31 @@ export default function GameScreen({navigation}: any ) {
         cargarPuntaje();
     }, [])
 
+    const updateScoreInFirestore = async (newScore) => {
+        const jugador = await AsyncStorage.getItem("jugador");
+        if (jugador) {
+            const q = query(collection(db, 'jugadores'), where('nombre', '==', jugador));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const jugadorDoc = querySnapshot.docs[0];
+                const jugadorRef = doc(db, "jugadores", jugadorDoc.id);
+                await updateDoc(jugadorRef, {
+                    puntaje: newScore
+                });
+            }
+        }
+    };
+
     const handleKeyPress = (letter: string) => {
         const guess: string = guesses[guessIndex]
+
+        if (guess === activeWord) {
+            const nuevoPuntaje = score + 1;
+            setScore(nuevoPuntaje);
+
+            // Actualizar el puntaje en Firestore
+            updateScoreInFirestore(nuevoPuntaje);
+        }
 
         if (letter === "ENTER") {
             if (guess.length !== 5) {

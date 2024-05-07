@@ -1,23 +1,36 @@
 import { View, Text, Button, StyleSheet } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { app } from '../firebaseconfig';
+import { updateDoc, doc } from "firebase/firestore";
+
+
 
 export default function ScoreScreen({ navigation }) {
 
   const [Jugador, setJugador] = useState('');
   const [Puntaje, setPuntaje] = useState(0);
+  const db = getFirestore(app);
+
 
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
+        // Recuperar el nombre del jugador de AsyncStorage
         const JugadorGuardado = await AsyncStorage.getItem('jugador');
         if (JugadorGuardado) {
           setJugador(JugadorGuardado);
-        }
 
-        const PuntajeGuardado = await AsyncStorage.getItem('puntaje');
-        if (PuntajeGuardado) {
-          setPuntaje(parseInt(PuntajeGuardado, 10));
+          // Recuperar el puntaje del jugador de Firestore
+          const q = query(collection(db, 'jugadores'), where('nombre', '==', JugadorGuardado));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const jugadorDoc = querySnapshot.docs[0];
+            const jugadorData = jugadorDoc.data();
+            setPuntaje(jugadorData.puntaje);
+          }
         }
       } catch (error) {
         console.log(error);

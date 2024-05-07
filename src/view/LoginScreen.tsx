@@ -3,12 +3,17 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet, Dimensions, Button
 import { GameContext } from '../context/GameContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera } from 'expo-camera'
+import { getFirestore, collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { app } from '../firebaseconfig';
+
 
 
 export default function LoginScreen({ navigation }) {
 
     const { SaveGame, getGame } = useContext(GameContext);
     const [jugador, setJugador] = useState('');
+    const db = getFirestore(app);
+
 
 
     const InicioJugador = async () => {
@@ -16,12 +21,21 @@ export default function LoginScreen({ navigation }) {
             alert('Por favor, ingresa un nombre antes de iniciar el juego.');
         } else {
             try {
-                const JugadorGuardado = await AsyncStorage.getItem('jugador');
-                if (JugadorGuardado !== jugador) {
-                    // Si es un nuevo jugador, resetear el puntaje a 0
-                    await AsyncStorage.setItem('puntaje', '0');
+                // Verificar si el jugador ya existe en Firestore
+                const q = query(collection(db, 'jugadores'), where('nombre', '==', jugador));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    // Si el jugador no existe, agregar un nuevo documento con puntaje inicial de 0
+                    await addDoc(collection(db, 'jugadores'), {
+                        nombre: jugador,
+                        puntaje: 0,
+                    });
                 }
+
+                // Guardar el jugador en AsyncStorage
                 await AsyncStorage.setItem("jugador", jugador);
+                // Navegar a la pantalla de juego
                 navigation.navigate("Game");
             } catch (error) {
                 console.log(error);
